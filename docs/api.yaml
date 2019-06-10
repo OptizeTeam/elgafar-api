@@ -1,0 +1,653 @@
+openapi: 3.0.0
+
+info:
+
+  title: Elgafar
+  description: Projekt [Optize](https://optize.pl/) typu startup
+  version: 0.0.1
+
+paths:
+
+  /attitude/latest:
+    get:
+      summary: Pięć ostatnio ocenionych organizacji
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      responses:
+        '200':
+          description: Zapytanie przetworzone prawidłowo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attitudes'
+      security:
+        - bearerAuth: []
+
+  /attitude/to-evaluate:
+    get:
+      summary: Lista organizacji, które nie zostały jeszcze ocenione
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      responses:
+        '200':
+          description: Zapytanie przetworzone prawidłowo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizations'
+      security:
+        - bearerAuth: []
+
+  /blacklist/{hash}:
+    put:
+      summary: Dodanie organizacji na czarną listę
+      parameters: 
+        - name: hash
+          in: path
+          required: true
+          description: Hash organizacji
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          $ref: '#/components/responses/ResourceUpdated'
+
+  /invitation/{hash}:
+    get:
+      summary: '?'
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: '?'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Zapytanie prztworzono prawidłowo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+
+  /login:
+    post:
+      summary: Logowanie do serwisu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Adres email użytkownika
+                  format: email
+                password:
+                  type: string
+                  description: Hasło uzytkownika
+      responses:
+        '200':
+          description: Zapytanie przetworzone prawidłowo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Token autoryzacyjny JWT
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /logout:
+    post:
+      summary: Wylogowanie z serwisu
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      responses:
+        '204':
+          description: Zapytanie przetworzono prawidłowo
+      security:
+        - bearerAuth: []
+
+  /organization:
+    post:
+      summary: Utworzenie nowej organizacji
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/OrganizationBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceCreated'
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /organization/{organizationId}/attitude:
+    put:
+      summary: Ocenienie organizacji
+      parameters: 
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                attitudeId:
+                  type: string
+                  description: Identyfikator stosunku
+                  format: uuid
+                evaluations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      evaluationTypeId:
+                        type: string
+                        description: Identyfikator typu oceny
+                        format: uuid
+                      value:
+                        type: integer
+                        description: Liczbowa wartość typu oceny
+                        minimum: 1
+                        maximum: 5
+                organizationId:
+                  type: string
+                  description: Identyfikator ocenianej organizacji
+                  format: uuid
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceCreated'
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /organization/{organizationId}/attitude/list:
+    get:
+      summary: Lista ocen organizacji
+      parameters: 
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      responses:
+        '200':
+          description: Zapytanie prztworzono prawidłowo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    attitude:
+                      $ref: '#/components/schemas/Attitude'
+                    evaluations:
+                      $ref: '#/components/schemas/Evaluations'
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /organization/list:
+    get:
+      summary: Lista organizacji
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      responses:
+        '200':
+          description: 'Zapytanie przetworzono prawidłowo'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organizations'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /organization/{organizationId}:
+    get:
+      summary: Szczegóły organizacji
+      parameters: 
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      responses:
+        '200':
+          description: Zapytanie prztworzono prawidłowo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+    put:
+      summary: Edycja organizacji
+      parameters: 
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/OrganizationBody'
+      responses:
+        '204':
+          $ref: '#/components/responses/ResourceUpdated'
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /reset-password:
+    post:
+      summary: Reset hasła
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Adres email, na który zostanie wysłany link zmiany hasła
+                  format: email
+      responses:
+        '200':
+          description: Zapytanie przetworzono prawidłowo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Wskazówki dotyczące dalszego postępowania w celu dokonania zmiany hasła
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+
+  /user:
+    post:
+      summary: Dodanie użytkownika
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/UserBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceCreated'
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - bearerAuth: []
+
+  /user/{userId}:
+    delete:
+      summary: Usunięcie użytkownika
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204':
+          $ref: '#/components/responses/ResourceDeleted'
+        '400':
+          $ref: '#/components/responses/ResourceNotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      summary: Edycja użytkownika
+      parameters:
+        - $ref: '#/components/parameters/AuthenticationHeader'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        $ref: '#/components/requestBodies/UserBody'
+      responses:
+        '204':
+          $ref: '#/components/responses/ResourceUpdated'
+        '400':
+          $ref: '#/components/responses/ValidationErrors'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+components:
+
+  parameters:
+    
+    AuthenticationHeader:
+      name: Authentication
+      in: header
+      description: Token autoryzujący
+      required: true
+      schema:
+        type: string
+        
+    OrganizationId:
+      name: organizationId
+      in: path
+      required: true
+      description: Identyfikator organizacji
+      schema:
+        type: string
+        format: uuid
+
+    UserId:
+      name: userId
+      in: path
+      required: true
+      description: Identyfikator użytkownika
+      schema:
+        type: string
+        format: uuid
+
+  requestBodies:
+    
+    OrganizationBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Nazwa organiacji
+              nip:
+                type: integer
+                description: NIP organizacji
+                minimum: 10
+                maximum: 10
+              address:
+                type: string
+                description: Adres organizacji
+              zip:
+                type: string
+                description: Kod pocztowy organizacji
+                minLength: 5
+                maxLength: 5
+              city:
+                type: string
+                description: Miasto organizacji
+                minLength: 1
+                maxLength: 64
+              country:
+                type: string
+                description: Identyfikator państwa z bazy danych
+                format: uuid
+              email:
+                type: string
+                description: Adres email organizacji
+                format: email
+
+    UserBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: nazwa użytkownika
+                minLength: 1
+                maxLength: 256
+              email:
+                type: string
+                description: Adres email użytkownika
+              positionName:
+                type: string
+                minLength: 1
+                maxLength: 256
+                description: Nazwa stanowiska użytkownika
+              # avatar:
+              #   type: string
+              #   description: Link do awatara użytkownika
+              #   format: uri
+              organizationId:
+                type: string
+                description: Identyfikator rganizacji, do której należy przypisać użytkownika
+                format: uuid
+
+  responses:
+
+    ResourceCreated:
+      description: Utworzono nowy zasób
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Identyfikator nowo utworzonego zasobu
+                format: uuid
+
+    ResourceDeleted:
+      description: Zasób został usunięty
+
+    ResourceNotFound:
+      description: Ządany zasób nie został odnaleziony
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ResourceUpdated:
+      description: Uaktualnienie zasobu zakończyło się powodzeniem
+
+    Unauthorized:
+      description: Brak autoryzacji
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  
+    ValidationErrors:
+      description: Przesłane dane są niepoprawne
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/FieldError'
+
+  schemas:
+  
+    Attitude:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identyfikator stosunku
+        type:
+          $ref: '#/components/schemas/AttitudeType'
+        sender:
+          $ref: '#/components/schemas/Organization'
+        receivier:
+          $ref: '#/components/schemas/Organization'
+
+    Attitudes:
+      type: array
+      items:
+        $ref: '#/components/schemas/Attitude'
+
+    AttitudeType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identyfikator typu stosunku
+        name:
+          type: string
+          description: Nazwa typu stosunku
+
+    Country:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identyfikator państwa
+          format: uuid
+        name:
+          type: string
+          description: Nazwa państwa
+        code:
+          type: string
+          description: Kod państwa (ISO 3166-1 alpha-2)
+          minLength: 2
+          maxLength: 2
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
+
+    Evaluation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identyfikator oceny
+          format: uuid
+        value:
+          type: integer
+          description: Liczbowa wartość oceny
+          minimum: 1
+          maximum: 5
+        type:
+          $ref: '#/components/schemas/EvaluationType'
+
+    Evaluations:
+      type: array
+      items:
+        $ref: '#/components/schemas/Evaluation'
+
+    EvaluationType:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identyfikator typu oceny
+          format: uuid
+        name:
+          type: string
+          description: Nazwa typu oceny
+
+    FieldError:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          description: Nazwa pola, do którego odnosi się błąd
+        error:
+          type: string
+          description: Wiadomość błędu
+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identyfikator organizacji
+          format: uuid
+        name:
+          type: string
+          description: Nazwa organiacji
+        nip:
+          type: integer
+          description: NIP organizacji
+          minimum: 10
+          maximum: 10
+        address:
+          type: string
+          description: Adres organizacji
+        zip:
+          type: string
+          description: Kod pocztowy organizacji
+          minLength: 5
+          maxLength: 5
+        city:
+          type: string
+          description: Miasto organizacji
+          minLength: 1
+          maxLength: 64
+        country:
+          $ref: '#/components/schemas/Country'
+        email:
+          type: string
+          description: Adres email organizacji
+          format: email
+
+    Organizations:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            description: Identyfikator organizacji
+            format: uuid
+          name:
+            type: string
+            description: Nazwa organizacji
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identyfikator użytkownika
+          format: uuid
+        name:
+          type: string
+          description: nazwa użytkownika
+          minLength: 1
+          maxLength: 256
+        email:
+          type: string
+          description: Adres email użytkownika
+        positionName:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Nazwa stanowiska użytkownika
+        avatar:
+          type: string
+          description: Link do awatara użytkownika
+          format: uri
+        organization:
+          $ref: '#/components/schemas/Organization'
+          description: Organizacja, do której należy użytkownik
+  
+  securitySchemes:
+  
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
